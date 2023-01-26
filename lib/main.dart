@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 void main() {
   runApp(const App());
@@ -11,9 +14,9 @@ class App extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'stairwaytoheaven',
+      title: 'ridelikethewind',
       theme: ThemeData(),
-      home: const HomePage(title: 'Counter'),
+      home: const HomePage(title: 'Color Picker'),
     );
   }
 }
@@ -28,11 +31,36 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  int _counter = 0;
+  final Map<String, Color> colors = {
+    'purple': Colors.purple,
+    'blue': Colors.blue,
+    'yellow': Colors.yellow,
+    'pink': Colors.pink,
+    'teal': Colors.teal,
+    'orange': Colors.orange,
+  };
 
-  void _incrementCounter() {
+  Color? selectColor;
+
+  @override
+  void initState() {
+    _getStoredColor();
+    super.initState();
+  }
+
+  void _getStoredColor() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? colorName = prefs.getString('color');
     setState(() {
-      _counter++;
+      selectColor = colors[colorName];
+    });
+  }
+
+  void _setColor(String colorName, Color color) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('color', colorName);
+    setState(() {
+      selectColor = color;
     });
   }
 
@@ -41,25 +69,31 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
+        backgroundColor: selectColor ?? Colors.black,
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Center(
+            child: Text(
+              'You are operating on ${kIsWeb ? "the web" : Platform.operatingSystem}',
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headline4,
+          ),
+          for (var entry in colors.entries)
+            Container(
+              margin: const EdgeInsets.all(10),
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: entry.value,
+                  minimumSize: const Size(300, 60),
+                ),
+                child: const Text(''),
+                onPressed: () => _setColor(entry.key, entry.value),
+              ),
             ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
+        ],
       ),
     );
   }
